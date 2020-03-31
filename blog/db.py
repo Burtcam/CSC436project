@@ -16,10 +16,12 @@ class termscodes(Base):
     discount = sqlalchemy.Column(sqlalchemy.Decimal)
     allowance = sqlalchemy.Column(sqlalchemy.Decimal)
     daysToEarnDiscount= sqlalchemy.Column(sqlalchemy.Integer)
+    #one to many
+    termschild = relationship("mastervendor")
+    termschild2 = relationship("orderheader")
 
 
 
-#todo add foreign key to terms id
 class mastervendor(Base):
     __tablename__='mastervendor'
 
@@ -30,49 +32,57 @@ class mastervendor(Base):
     state = sqlalchemy.Column(sqlalchemy.String(length=48))
     zip = sqlalchemy.Column(sqlalchemy.Integer)
     address = sqlalchemy.Column(sqlalchemy.String(length=50))
-    termsID = sqlalchemy.Column(sqlalchemy.String(length=12))
+    termsID = sqlalchemy.Column(sqlalchemy.String(length=12), ForeignKey('termscodes.termsID'))
+    #one to many with masteritem
+    childvendor = relationship("masteritem")
+    childvendor2 = relationship("orderheader")
 
 
-
-#masteritemtable todo add foreign key on vendorId to vendormaster
 class masteritem(Base):
     __tablename__ = 'masteritem'
 
     itemID = sqlalchemy.Column(sqlalchemy.String(length=48,primary_key=True))
     lastPriceChange = sqlalchemy.Column(sqlalchemy.Date)
     previousCost = sqlalchemy.Column(sqlalchemy.Float)
-    vendorId = sqlalchemy.Column(sqlalchemy.String(length=48))
+    vendorId = sqlalchemy.Column(sqlalchemy.String(length=48),ForeignKey('mastervendor.vendorId'))
     cost = sqlalchemy.Column(sqlalchemy.Float)
     intialPurchaseDate = sqlalchemy.Column(sqlalchemy.Date)
 
+    #connection to inventory
+    childitem = relationship("inventory")
+    childitem2 = relationship("lineitem")
 
-#inventorytable todo add foreign key on itemId to masteritem
+
 class inventory(Base):
     __tablename__ = 'inventory'
 
     recordnum = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    itemID = sqlalchemy.Column(sqlalchemy.String(length=48), foreign_key=True)
+    itemID = sqlalchemy.Column(sqlalchemy.String(length=48), ForeignKey('masteritem.itemID'))
     onhand = sqlalchemy.Column(sqlalchemy.Integer)
     location = sqlalchemy.Column(sqlalchemy.String(length=12))
 
-#TODO add foreign key on terms id, vendorID
 class orderheader(Base):
     __tablename__ = 'orderheader'
 
     orderreceived = sqlalchemy.Column(sqlalchemy.Date)
-    vendorId = itemID = sqlalchemy.Column(sqlalchemy.String(length=48))
+    vendorId = itemID = sqlalchemy.Column(sqlalchemy.String(length=48), ForeignKey('vendormaster.vendorId'))
     orderdate = sqlalchemy.Column(sqlalchemy.Date)
-    orderID = sqlalchemy.Column(sqlalchemy.Integer)
+    orderID = sqlalchemy.Column(sqlalchemy.Integer, primary_key = True)
     shipdate = sqlalchemy.Column(sqlalchemy.Date)
-    cost = sqlalchemy.Column(sqlalchemy.Float)
-    termsID = termsID = sqlalchemy.Column(sqlalchemy.String(length=12))
+    Cost = sqlalchemy.Column(sqlalchemy.Float)
+    termsID = sqlalchemy.Column(sqlalchemy.String(length=12),ForeignKey('termscodes.termsID'))
+    childorder = relationship("lineitem")
 
+#foreign on orderid and itemid todo
 class lineitem(Base):
     __tablename__ = 'lineitem'
 
-    itemID = sqlalchemy.Column(sqlalchemy.String(length=48), foreign_key=True)
+    itemID = sqlalchemy.Column(sqlalchemy.String(length=48), ForeignKey('masteritem.itemID'))
     quantity = sqlalchemy.Column(sqlalchemy.Integer)
-    lineID = 
+    lineID = sqlalchemy.Column(sqlalchemy.Integer)
+    orderID = sqlalchemy.Column(sqlalchemy.Integer, ForeignKey('orderheader.orderID'))
+    Cost = sqlalchemy.Column(sqlalchemy.Float, ForeignKey('masteritem.cost'))
+
 
     def __repr__(self):
         return "<User(name='{0}', fullname='{1}', nickname='{2}')>".format(
@@ -87,7 +97,7 @@ Session.configure(bind=engine)
 session = Session()
 
 # Add a user
-jwk_user = User(name='jesper', fullname='Jesper Wisborg Krogh', nickname='&#x1f42c;')
+jwk_user = User(name='Cam', fullname='Cam Burt', nickname='&#x1f42c;')
 session.add(jwk_user)
 session.commit()
 
